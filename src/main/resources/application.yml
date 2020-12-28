@@ -1,0 +1,30 @@
+server:
+  port: 8081
+
+# mybatis配置
+#mybatis:
+#  mapperLocations: classpath:mapper/*.xml
+#  type-aliases-package: com.wl.beans
+
+
+# 连接phoenix
+spring:
+  datasource:
+    driver-class-name: org.apache.phoenix.jdbc.PhoenixDriver
+    url: jdbc:phoenix:master:2181
+    type: com.alibaba.druid.pool.DruidDataSource
+    data-username:
+    data-password:
+
+# 连接mysql
+#spring:
+#  datasource:
+#    username: root
+#    password: root
+#    url: jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=UTC
+#    driver-class-name: com.mysql.jdbc.Driver
+logging:
+  level:
+    com:
+      wl:
+        mapper: trace
