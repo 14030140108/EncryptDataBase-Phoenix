@@ -12,7 +12,6 @@ import com.wl.mapper.PhoenixMapper;
 import com.wl.stcoder.Cube;
 import com.wl.stcoder.STCodeTime;
 import it.unisa.dia.gas.jpbc.Element;
-import it.unisa.dia.gas.plaf.jpbc.field.curve.CurveElement;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -69,8 +69,10 @@ public class Constants {
     /**
      * FastGeo方案中二级索引的MAP大小
      */
-    public static final int MAP_SIZE = 5000;
+    public static final int MAP_SIZE = 400;
 
     public static final String SSW_SECRETKEY = "SSW-SecretKey.txt";
+
+    public static final String FASTGEO_TABLE = "FastGeoTest";
 
 }

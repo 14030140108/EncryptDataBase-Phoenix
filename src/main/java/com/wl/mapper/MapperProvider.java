@@ -121,4 +121,14 @@ public class MapperProvider {
     public String selectColumn(String tableName) {
         return "SELECT COLUMN_NAME FROM SYSTEM.CATALOG WHERE TABLE_NAME=\'" + tableName + "\'";
     }
+
+    public String selectFastGeo(String tableName, List<String> columns) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("SELECT \"").append(columns.get(0)).append("\",\"")
+                .append(columns.get(1)).append("\",\"")
+                .append(columns.get(2)).append("\",\"")
+                .append(columns.get(3)).append("\" FROM \"")
+                .append(tableName).append("\"");
+        return sb.toString();
+    }
 }

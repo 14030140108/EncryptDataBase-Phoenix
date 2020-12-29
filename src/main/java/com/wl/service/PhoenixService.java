@@ -360,7 +360,7 @@ public class PhoenixService {
         c_data.add(ssw_time);
         c_data.add(base32Util.encoder(aes.encrypt(lat, KeyType.TABLEDATA_ENCRYPT.getValue())));
 
-        FastGeoSSW fp = new FastGeoSSW(c_data.get(0), ctLon, ctTime);
+        FastGeoSSW fp = new FastGeoSSW(c_data.get(0), null, ctLon, ctTime);
         fastGeoOperator.putData(c_data.get(c_data.size() - 1), fp);
         // 4. 插入数据
         phoenixMapper.insert(tableName, c_data);
@@ -384,7 +384,7 @@ public class PhoenixService {
         data.add(Arrays.toString(m_time));
         data.add(lat);
 
-        MFastGeo fg = new MFastGeo(data.get(0), m_lon, m_time);
+        MFastGeo fg = new MFastGeo(data.get(0), m_lon, m_time, null);
         fastGeoOperator.mputData(lat, fg);
         // 4. 插入数据
         phoenixMapper.insert(tableName, data);
@@ -567,5 +567,55 @@ public class PhoenixService {
         long endTime = DateUtil.parseDate(points.getNode2().getTime()).getTime();
 
         return lat >= startLat && lat <= endLat && lon >= startLon && lon <= endLon && time >= startTime && time <= endTime;
+    }
+
+    public FastGeoPointMap<String, List<FastGeoSSW>> getCDataFromDB() throws BadPaddingException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, IllegalBlockSizeException, NoSuchPaddingException, InvalidKeyException {
+        String tableName = base32Util.encoder(aes.encrypt(Constants.FASTGEO_TABLE, KeyType.TABLENAME_ENCRYPT.getValue()));
+        List<String> re = phoenixMapper.selectColumn(tableName).stream().filter(Objects::nonNull).collect(Collectors.toList());
+        List<String> columns = new ArrayList<>();
+        for (String s : re) {
+            String de = aes.decrypt(base32Util.decoder(s), KeyType.TABLENAME_ENCRYPT.getValue());
+            boolean idFlag = Pattern.compile("([Ii][Dd])").matcher(de).find();
+            if (idFlag) {
+                columns.add(s);
+            }
+        }
+        columns.add(base32Util.encoder(aes.encrypt(Constants.FASTGEO_FIELDS[0], KeyType.TABLENAME_ENCRYPT.getValue())));
+        columns.add(base32Util.encoder(aes.encrypt(Constants.FASTGEO_FIELDS[1], KeyType.TABLENAME_ENCRYPT.getValue())));
+        columns.add(base32Util.encoder(aes.encrypt(Constants.FASTGEO_FIELDS[2], KeyType.TABLENAME_ENCRYPT.getValue())));
+
+        List<FastGeoDO> fg = phoenixMapper.selectFastGeo(tableName, columns);
+        List<FastGeoSSW> sswFromDo = fastGeoOperator.getSSWFromDo(fg);
+
+        FastGeoPointMap<String, List<FastGeoSSW>> c_data = new FastGeoPointMap<>(Constants.MAP_SIZE);
+        for (FastGeoSSW f : sswFromDo) {
+            fastGeoOperator.putData(f.getAesLat(), f);
+        }
+        return c_data;
+    }
+
+    public FastGeoPointMap<String, List<MFastGeo>> getMDataFromDB() {
+        String tableName = Constants.FASTGEO_TABLE;
+
+        List<String> re = phoenixMapper.selectColumn(tableName).stream().filter(Objects::nonNull).collect(Collectors.toList());
+        List<String> columns = new ArrayList<>();
+        for (String s : re) {
+            boolean idFlag = Pattern.compile("([Ii][Dd])").matcher(s).find();
+            if (idFlag) {
+                columns.add(s);
+            }
+        }
+        columns.add(Constants.FASTGEO_FIELDS[0]);
+        columns.add(Constants.FASTGEO_FIELDS[1]);
+        columns.add(Constants.FASTGEO_FIELDS[2]);
+
+        List<FastGeoDO> fg = phoenixMapper.selectFastGeo(tableName, columns);
+        List<MFastGeo> sswFromDo = fastGeoOperator.getMFromDo(fg);
+
+        FastGeoPointMap<String, List<MFastGeo>> m_data = new FastGeoPointMap<>(Constants.MAP_SIZE);
+        for (MFastGeo f : sswFromDo) {
+            fastGeoOperator.mputData(f.getAesLat(), f);
+        }
+        return m_data;
     }
 }

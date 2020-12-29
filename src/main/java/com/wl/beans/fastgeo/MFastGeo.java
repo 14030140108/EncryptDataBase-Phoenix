@@ -12,4 +12,5 @@ public class MFastGeo {
     String id;
     int[] m_lon;
     int[] m_time;
+    String aesLat;
 }

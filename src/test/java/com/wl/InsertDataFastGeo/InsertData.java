@@ -52,7 +52,7 @@ public class InsertData {
     FastGeoOperator fastGeoOperator;
 
     /**
-     * 批量插入10W条密文数据
+     * 批量插入1000条密文数据
      */
     @Test
     public void batchInsertEncryptData() {
@@ -69,7 +69,7 @@ public class InsertData {
             String sql = "upsert into \"" + tableName + "\" values (?,?,?,?,?,?,?)";
             stmt = conn.prepareStatement(sql);
 
-            String path = this.getClass().getResource("/TestData.txt").getPath();
+            String path = this.getClass().getResource("/TestFastGeoData.txt").getPath();
             BufferedReader in = new BufferedReader(new FileReader(path));
             String temp;
             int i = 1;
@@ -103,7 +103,7 @@ public class InsertData {
             stmt.executeBatch();
             conn.commit();
             long end = System.currentTimeMillis();
-            System.out.println("批量插入10W条加密数据总耗时：" + (end - start) * 1.0 / 1000 + "秒");
+            System.out.println("批量插入1000条加密数据总耗时：" + (end - start) * 1.0 / 1000 + "秒");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -112,7 +112,7 @@ public class InsertData {
     }
 
     /**
-     * 批量插入10W条明文数据
+     * 批量插入1000条明文数据
      */
     @Test
     public void insertData() {
@@ -124,11 +124,11 @@ public class InsertData {
             conn = (PhoenixConnection) DriverManager.getConnection("jdbc:phoenix:master:2181");
             conn.setAutoCommit(false);
             int mutateBatchSize = conn.getMutateBatchSize();
-            String tableName = "STCodeTest";
+            String tableName = "FastGeoTest";
             String sql = "upsert into \"" + tableName + "\" values (?,?,?,?,?,?,?)";
             stmt = conn.prepareStatement(sql);
 
-            String path = this.getClass().getResource("/TestData.txt").getPath();
+            String path = this.getClass().getResource("/TestFastGeoData.txt").getPath();
             BufferedReader in = new BufferedReader(new FileReader(path));
             String temp;
             int i = 1;
@@ -143,7 +143,7 @@ public class InsertData {
                 stmt.setString(3, lon);
                 stmt.setString(4, time);
                 stmt.setString(5, Arrays.toString(fastGeoOperator.getVectorLon(lon)));
-                stmt.setString(6, Arrays.toString(fastGeoOperator.getVectorTime(lon)));
+                stmt.setString(6, Arrays.toString(fastGeoOperator.getVectorTime(time)));
                 stmt.setString(7, String.valueOf(TypeUtil.getIntFromString(lat)));
 
                 stmt.addBatch();
@@ -155,7 +155,7 @@ public class InsertData {
             stmt.executeBatch();
             conn.commit();
             long end = System.currentTimeMillis();
-            System.out.println("批量插入10W条明文数据总耗时：" + (end - start) * 1.0 / 1000 + "秒");
+            System.out.println("批量插入1000条明文数据总耗时：" + (end - start) * 1.0 / 1000 + "秒");
 
         } catch (Exception e) {
             e.printStackTrace();

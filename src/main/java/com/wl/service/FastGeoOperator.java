@@ -7,9 +7,16 @@ import com.wl.beans.fastgeo.FastGeoDO;
 import com.wl.beans.fastgeo.FastGeoSSW;
 import com.wl.beans.fastgeo.MFastGeo;
 import com.wl.constant.Constants;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,8 +37,21 @@ public class FastGeoOperator {
     //明文的二级索引
     private FastGeoPointMap<String, List<MFastGeo>> m_data = new FastGeoPointMap<>(Constants.MAP_SIZE);
 
+    @Autowired
+    PhoenixService phoenixService;
+
     @PostConstruct
     public void init() {
+        try {
+            if (c_data.size() == 0) {
+                phoenixService.getCDataFromDB();
+            }
+            if (m_data.size() == 0) {
+                phoenixService.getMDataFromDB();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -105,18 +125,24 @@ public class FastGeoOperator {
     public void putData(String key, FastGeoSSW fp) {
         List<FastGeoSSW> fpList = c_data.get(key);
         if (fpList == null) {
-            c_data.put(key, Arrays.asList(fp));
+            fpList = new ArrayList<>();
+            fpList.add(fp);
+            c_data.put(key, fpList);
         } else {
             fpList.add(fp);
+            c_data.put(key, fpList);
         }
     }
 
     public void mputData(String key, MFastGeo fp) {
         List<MFastGeo> fpList = m_data.get(key);
         if (fpList == null) {
-            m_data.put(key, Arrays.asList(fp));
+            fpList = new ArrayList<>();
+            fpList.add(fp);
+            m_data.put(key, fpList);
         } else {
             fpList.add(fp);
+            m_data.put(key, fpList);
         }
     }
 
@@ -152,6 +178,7 @@ public class FastGeoOperator {
         for (FastGeoDO f : re) {
             FastGeoSSW fg = new FastGeoSSW();
             fg.setId(f.getId());
+            fg.setAesLat(f.getAesLat());
             fg.setSswLon(ct.buildCipherText(f.getSswLon()));
             fg.setSswTime(ct.buildCipherText(f.getSswTime()));
             result.add(fg);
@@ -164,6 +191,7 @@ public class FastGeoOperator {
         for (FastGeoDO f : re) {
             MFastGeo fg = new MFastGeo();
             fg.setId(f.getId());
+            fg.setAesLat(f.getAesLat());
             fg.setM_lon(TypeUtil.getIntArrayFromString(f.getSswLon()));
             fg.setM_time(TypeUtil.getIntArrayFromString(f.getSswTime()));
             result.add(fg);

@@ -18,6 +18,9 @@ public interface PhoenixMapper {
     @SelectProvider(type = com.wl.mapper.MapperProvider.class, method = "selectFastGeoSSWByAESLat")
     List<FastGeoDO> selectFastGeoSSWByAESLat(String tableName, String aesLat, List<String> columns);
 
+    @SelectProvider(type = com.wl.mapper.MapperProvider.class, method = "selectFastGeo")
+    List<FastGeoDO> selectFastGeo(String tableName, List<String> columns);
+
     @SelectProvider(type = com.wl.mapper.MapperProvider.class, method = "selectPointById")
     FastGeoPoint selectPointById(String tableName, String id, List<String> columns);
 
