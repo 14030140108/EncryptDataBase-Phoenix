@@ -75,4 +75,15 @@ public class Constants {
 
     public static final String FASTGEO_TABLE = "FastGeoTest";
 
+    // -----------------------KNN查询方案的常量--------------------------------------------
+    /**
+     * 经度和维度组成的面积
+     */
+    public static final double LAT_LON_FANGE = 180 * 360;
+
+    /**
+     * KNN查询默认一天范围
+     */
+    public static final int KNN_DAY = 30;
+
 }

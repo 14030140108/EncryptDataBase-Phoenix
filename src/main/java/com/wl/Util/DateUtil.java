@@ -1,10 +1,12 @@
 package com.wl.Util;
 
 import com.wl.beans.RectNode;
+import com.wl.constant.Constants;
 import com.wl.stcoder.STCodeTime;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 
 public class DateUtil {
@@ -13,7 +15,6 @@ public class DateUtil {
         SimpleDateFormat simple = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return simple.parse(time);
     }
-
 
 
     /**
@@ -38,5 +39,25 @@ public class DateUtil {
     public static boolean isLeapYear(Date d) {
         int year = Integer.parseInt(String.format("%tY", d));
         return year % 4 == 0 && year % 100 != 0 || year % 400 == 0;
+    }
+
+    public static String addDay(String time) throws ParseException {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        Date d = df.parse(time);
+        Calendar c = Calendar.getInstance();
+        c.setTime(d);
+        c.add(Calendar.DAY_OF_MONTH, Constants.KNN_DAY);
+        d = c.getTime();
+        return df.format(d);
+    }
+
+    public static String subDay(String time) throws ParseException {
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        Date d = df.parse(time);
+        Calendar c = Calendar.getInstance();
+        c.setTime(d);
+        c.add(Calendar.DAY_OF_MONTH, Constants.KNN_DAY * -1);
+        d = c.getTime();
+        return df.format(d);
     }
 }

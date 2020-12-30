@@ -40,6 +40,7 @@ public class Client2 {
             }
             System.out.println("客户端正常退出");
         } catch (IOException e) {
+            System.out.println("远程服务器已关闭");
             e.printStackTrace();
         }
     }

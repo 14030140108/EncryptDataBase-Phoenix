@@ -7,7 +7,7 @@
     </appender>
 
     <!--mybatis log configure-->
-    <logger name="com.wl.mapper" level="info"/>
+    <logger name="com.wl.mapper" level="debug"/>
 
     <root level="info">
         <appender-ref ref="CONSOLE" />

@@ -23,8 +23,54 @@ public class SelectHandler implements Handler {
 
     @Override
     public String executeHandler() {
-        boolean isSTCode = sql.contains("STCodeRangeQuery");
-        return parseSelectSQL(isSTCode);
+        boolean isKNN = sql.contains("KNNQuery");
+        if (isKNN) {
+            return parseKNNSQL();
+        } else {
+            boolean isSTCode = sql.contains("STCodePoint");
+            return parseSelectSQL(isSTCode);
+        }
+    }
+
+    private String parseKNNSQL() {
+        try {
+            // 获取表名
+            String[] str = sql.split(" ");
+            String tableName = str[str.length - 1];
+            if (tableName.contains(";")) {
+                tableName = tableName.substring(0, tableName.length() - 1);
+            }
+
+            int startIndex = sql.indexOf("(");
+            int endIndex = sql.lastIndexOf(")");
+            sql = sql.substring(startIndex + 1, endIndex).trim();
+
+            String[] sqlStr = sql.split(",");
+            int pointCount = Integer.parseInt(sqlStr[sqlStr.length - 1]);
+
+            startIndex = sql.indexOf("(");
+            endIndex = sql.lastIndexOf(")");
+            sql = sql.substring(startIndex + 1, endIndex);
+            String[] p = sql.split(",");
+            RectNode node = new RectNode();
+            node.setLat(Double.parseDouble(p[0].trim()));
+            node.setLon(Double.parseDouble(p[1].trim()));
+            String trim = p[2].trim();
+            node.setTime(trim.contains("\"") ? trim.substring(1, trim.length() - 1) : trim);
+            List<STCodePoint> stCodePoints;
+            if (isEncrypt) {
+                stCodePoints = phoenixService.selectKNNInEncrypt(tableName, node, pointCount);
+            } else {
+                stCodePoints = phoenixService.selectKNN(tableName, node, pointCount);
+            }
+
+            return toStringSTCode(stCodePoints);
+        } catch (Exception e) {
+            log.error(e.toString());
+            return "数据查询失败";
+        }
+
+
     }
 
     private String parseSelectSQL(boolean isSTCode) {

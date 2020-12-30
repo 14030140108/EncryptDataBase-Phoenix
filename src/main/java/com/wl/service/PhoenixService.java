@@ -17,6 +17,7 @@ import com.wl.stcoder.Cube;
 import com.wl.stcoder.STCodeTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.w3c.dom.css.Rect;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -617,5 +618,127 @@ public class PhoenixService {
             fastGeoOperator.mputData(f.getAesLat(), f);
         }
         return m_data;
+    }
+
+    // -------------------------------KNN方案 ------------------------------------------------------------------------------------------------
+
+    public List<STCodePoint> selectKNNInEncrypt(String tableName, RectNode node, int pointCount) throws Exception {
+        long start = System.currentTimeMillis();
+
+        int count = phoenixMapper.selectCount(base32Util.encoder(aes.encrypt(tableName, KeyType.TABLENAME_ENCRYPT.getValue())));
+        double rg = Constants.LAT_LON_FANGE / count * pointCount;
+        List<STCodePoint> re = new ArrayList<>();
+        int i = 1;
+        // 1. 求解出指定范围的空间数据点
+        while (re.size() < pointCount) {
+            CuboidNode query = getOtherNode(node, (2 * (i++)) * rg);
+            if (isStop(query)) {
+                re = selectEncryptSTCode(tableName, query);
+                break;
+            }
+            re = selectEncryptSTCode(tableName, query);
+        }
+
+        // 2. 找出维度和经度方向距离给定点最近的K个点
+        re = getMinKPoint(re, pointCount, node);
+
+        // 3. 复查K个点
+        if (re.size() >= pointCount) {
+            STCodePoint s = re.get(re.size() - 1);
+            double maxD = getDistance(s, node);
+            CuboidNode query = getOtherNode(node, maxD);
+            re = selectEncryptSTCode(tableName, query);
+            long end = System.currentTimeMillis();
+            System.out.println("KNN方案在密文上查询数据的时间：" + (end - start) * 1.0 / 1000 + "秒");
+            return getMinKPoint(re, pointCount, node);
+        }
+        long end = System.currentTimeMillis();
+        System.out.println("KNN方案在密文上查询数据的时间：" + (end - start) * 1.0 / 1000 + "秒");
+        return re;
+    }
+
+    public List<STCodePoint> selectKNN(String tableName, RectNode node, int pointCount) throws Exception {
+        long start = System.currentTimeMillis();
+
+        int count = phoenixMapper.selectCount(tableName);
+        double rg = Constants.LAT_LON_FANGE / count * pointCount;
+        List<STCodePoint> re = new ArrayList<>();
+        int i = 1;
+        // 1. 求解出指定范围的空间数据点
+        while (re.size() < pointCount) {
+            CuboidNode query = getOtherNode(node, (2 * (i++)) * rg);
+            if (isStop(query)) {
+                re = selectSTCode(tableName, query);
+                break;
+            }
+            re = selectSTCode(tableName, query);
+        }
+
+        // 2. 找出维度和经度方向距离给定点最近的K个点
+        re = getMinKPoint(re, pointCount, node);
+
+        // 3. 复查K个点
+        if (re.size() >= pointCount) {
+            STCodePoint s = re.get(re.size() - 1);
+            double maxD = getDistance(s, node);
+            CuboidNode query = getOtherNode(node, maxD);
+            re = selectSTCode(tableName, query);
+            long end = System.currentTimeMillis();
+            System.out.println("KNN方案在明文上查询数据的时间：" + (end - start) * 1.0 / 1000 + "秒");
+            return getMinKPoint(re, pointCount, node);
+        }
+        long end = System.currentTimeMillis();
+        System.out.println("KNN方案在明文上查询数据的时间：" + (end - start) * 1.0 / 1000 + "秒");
+        return re;
+    }
+
+    private CuboidNode getOtherNode(RectNode node, double rg) throws ParseException {
+        double lat1 = node.getLat() - rg < -90 ? -90 : node.getLat() - rg;
+        double lat2 = node.getLat() + rg > 90 ? 90 : node.getLat() + rg;
+
+        double lon1 = node.getLon() - rg < -180 ? -180 : node.getLon() - rg;
+        double lon2 = node.getLon() + rg > 180 ? 180 : node.getLon() + rg;
+
+        String time1 = DateUtil.subDay(node.getTime()) + " 00:00:00";
+        String time2 = DateUtil.addDay(node.getTime()) + " 23:59:59";
+        return new CuboidNode(new RectNode(lat1, lon1, time1), new RectNode(lat2, lon2, time2));
+    }
+
+    private List<STCodePoint> getMinKPoint(List<STCodePoint> re, int k, RectNode node) {
+
+        double lat = node.getLat();
+        double lon = node.getLon();
+        if (re.size() < k) {
+            return re;
+        }
+
+        return re.stream().sorted((s1, s2) -> {
+            double s1Lat = Double.parseDouble(s1.getLat());
+            double s2Lat = Double.parseDouble(s2.getLat());
+            double s1Lon = Double.parseDouble(s1.getLon());
+            double s2Lon = Double.parseDouble(s2.getLon());
+            double result = (Math.pow(s1Lat - lat, 2) + Math.pow(s1Lon - lon, 2)) - (Math.pow(s2Lat - lat, 2) + Math.pow(s2Lon - lon, 2));
+            if (result < 0) {
+                return -1;
+            } else if (result == 0) {
+                return 0;
+            } else {
+                return 1;
+            }
+        }).limit(k).collect(Collectors.toList());
+
+    }
+
+    private double getDistance(STCodePoint s, RectNode r) {
+        double lat = r.getLat();
+        double lon = r.getLon();
+
+        double lat1 = Double.parseDouble(s.getLat());
+        double lon1 = Double.parseDouble(s.getLon());
+        return Math.sqrt(Math.pow(lat1 - lat, 2) + Math.pow(lon1 - lon, 2)) + 0.01;
+    }
+
+    private boolean isStop(CuboidNode query) {
+        return query.getNode1().getLat() == -90 && query.getNode1().getLon() == -180 && query.getNode2().getLat() == 90 && query.getNode2().getLon() == 180;
     }
 }

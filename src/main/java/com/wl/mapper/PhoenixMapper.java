@@ -24,6 +24,9 @@ public interface PhoenixMapper {
     @SelectProvider(type = com.wl.mapper.MapperProvider.class, method = "selectPointById")
     FastGeoPoint selectPointById(String tableName, String id, List<String> columns);
 
+    @Select("SELECT COUNT(*) FROM \"${tableName}\"")
+    int selectCount(@Param("tableName") String tableName);
+
     @SelectProvider(type = com.wl.mapper.MapperProvider.class, method = "selectColumn")
     List<String> selectColumn(String tableName);
 
